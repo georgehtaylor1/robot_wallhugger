@@ -168,13 +168,13 @@ class WallHugger:
             new_speed.angular.z = -self.rotate_speed_slow  # ac
             action = "Right"
 
-    if self.noisy:
-        rospy.loginfo(
-            'lin: {}, ang: {}, act: {}, ma: {}, dir: {}'.format(new_speed.linear.x, new_speed.angular.z, action, ma,
-                                                                dir))
+        if self.noisy:
+            rospy.loginfo(
+                'lin: {}, ang: {}, act: {}, ma: {}, dir: {}'.format(new_speed.linear.x, new_speed.angular.z, action, ma,
+                                                                    dir))
 
-    # send the movement command to the robot
-    self.move_pub.publish(new_speed)
+        # send the movement command to the robot
+        self.move_pub.publish(new_speed)
 
 
 if __name__ == '__main__':
