@@ -77,7 +77,7 @@ class WallHugger:
         # TODO: these values are just chosen to work reasonably well in the
         #      simulator, different parameters are probably required when
         #      running on the real robot.
-        self.speed = 0.5
+        self.speed = 0.3
         # TODO: setting this too high causes the robot to spin in a tight circle
         #      without ever 'attaching' to a wall if placed in a large enough
         #      open space. Setting too low makes the turning circle very large
@@ -92,6 +92,8 @@ class WallHugger:
         self.min_wall_distance = desired_wall_distance - threshold
         self.max_wall_distance = desired_wall_distance + threshold
         self.angle_thresh = 1
+        self.side_range = 0.3
+        self.front_range = 0.8
 
     def is_obstructed(self, front, left, right, ranges):
         """ whether the robot is able to safely move forwards.
@@ -106,7 +108,7 @@ class WallHugger:
         Returns:
             whether the robot is 'obstructed'
         """
-        return front < 0.8, left < 0.6, right < 0.6
+        return front < self.front_range, left < self.side_range, right < self.side_range
 
     def laser_callback(self, laser_msg):
         """ callback for receiving laser sensor messages
