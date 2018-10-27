@@ -95,7 +95,7 @@ class WallHugger:
         self.side_range = 0.3
         self.front_range = 0.8
 
-    def is_obstructed(self, right, right_f, left_f, left, ranges):
+    def is_obstructed(self, right, right_f, left_f, left):
         """ whether the robot is able to safely move forwards.
         i.e. If there is space in front and there is no obstacle too close anywhere.
 
