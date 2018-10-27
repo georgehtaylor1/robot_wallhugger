@@ -157,36 +157,24 @@ class WallHugger:
         ma = -1
         dir = None
 
-        if not self.is_obstructed(front, laser_msg.ranges):
-            # not obstructed: move forwards and try to stay a fixed distance to
-            # the wall on the right.
-            new_speed.linear.x = self.speed
+        # > 0 = left
+        # < 0 = right
+        dir = (a - b) * -1
 
-            if right < self.min_wall_distance:
-                ma = 0
-            elif right > self.max_wall_distance:
-                ma = 2
-            else:
-                ma = 1
+        if dir < 0:
+            new_speed.angular.z = self.rotate_speed_slow  # ac
+            action = "Left"
+        elif dir > 0:
+            new_speed.angular.z = -self.rotate_speed_slow  # ac
+            action = "Right"
 
-            # > 0 = left
-            # < 0 = right
-            dir = (a - b) * -1
+    if self.noisy:
+        rospy.loginfo(
+            'lin: {}, ang: {}, act: {}, ma: {}, dir: {}'.format(new_speed.linear.x, new_speed.angular.z, action, ma,
+                                                                dir))
 
-            if dir < 0:
-                new_speed.angular.z = self.rotate_speed_slow  # ac
-                action = "Left"
-            elif dir > 0:
-                new_speed.angular.z = -self.rotate_speed_slow  # ac
-                action = "Right"
-
-        if self.noisy:
-            rospy.loginfo(
-                'lin: {}, ang: {}, act: {}, ma: {}, dir: {}'.format(new_speed.linear.x, new_speed.angular.z, action, ma,
-                                                                    dir))
-
-        # send the movement command to the robot
-        self.move_pub.publish(new_speed)
+    # send the movement command to the robot
+    self.move_pub.publish(new_speed)
 
 
 if __name__ == '__main__':
