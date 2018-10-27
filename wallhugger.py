@@ -28,6 +28,7 @@ def nth_smallest(values, n):
     """
     return np.sort(values)[n]
 
+
 def clean_lasers(readings, limits):
     """ discard bad values from the laser scan and clip the values between the limits.
     Args:
@@ -35,13 +36,14 @@ def clean_lasers(readings, limits):
         limits (tuple): the reported limits of distance readings (min_value, max_value)
     """
     r_min, r_max = limits
-    #TODO: instead of filtering out the bad values, you may wish to replace them
+    # TODO: instead of filtering out the bad values, you may wish to replace them
     #      with a constant value instead (e.g. r_min) if you are relying on a
     #      particular element always corresponding to the same angle.
     valid_readings = [np.clip(r, a_min=r_min, a_max=r_max) for r in readings
                       if not math.isnan(r) and not math.isinf(r)]
     assert valid_readings, 'none of the readings were valid!'
     return valid_readings
+
 
 class WallHugger:
     """ A behaviour which instructs the robot to follow the wall to its right
@@ -72,11 +74,11 @@ class WallHugger:
         # whether to print debugging messages
         self.noisy = noisy
 
-        #TODO: these values are just chosen to work reasonably well in the
+        # TODO: these values are just chosen to work reasonably well in the
         #      simulator, different parameters are probably required when
         #      running on the real robot.
         self.speed = 0.3
-        #TODO: setting this too high causes the robot to spin in a tight circle
+        # TODO: setting this too high causes the robot to spin in a tight circle
         #      without ever 'attaching' to a wall if placed in a large enough
         #      open space. Setting too low makes the turning circle very large
         #      once it reaches a corner. Perhaps a large value is best, with
@@ -84,12 +86,12 @@ class WallHugger:
         #      a wall.
         self.rotate_speed = 0.5
         self.rotate_speed_slow = 0.2
-	self.prev_dist = 5
+        self.prev_dist = 5
         desired_wall_distance = 1.2
-	threshold = 0.2
-        self.min_wall_distance = desired_wall_distance-threshold
-        self.max_wall_distance = desired_wall_distance+threshold
- 	self.angle_thresh = 1
+        threshold = 0.2
+        self.min_wall_distance = desired_wall_distance - threshold
+        self.max_wall_distance = desired_wall_distance + threshold
+        self.angle_thresh = 1
 
     def is_obstructed(self, front, ranges):
         """ whether the robot is able to safely move forwards.
@@ -106,7 +108,6 @@ class WallHugger:
         """
         return front < 0.6
 
-
     def laser_callback(self, laser_msg):
         """ callback for receiving laser sensor messages
 
@@ -121,21 +122,21 @@ class WallHugger:
             laser_msg (LaserScan): the lidar distance readings message
         """
         limits = (laser_msg.range_min, laser_msg.range_max)
-        ranges = laser_msg.ranges #clean_lasers(laser_msg.ranges, limits)
+        ranges = laser_msg.ranges  # clean_lasers(laser_msg.ranges, limits)
 
-	mid = lambda x: x #x[len(x)/3:len(x)*2/3]
+        mid = lambda x: x  # x[len(x)/3:len(x)*2/3]
 
         # split the readings spanning 180 degrees into 3 sections
         right, front, left = np.array_split(ranges, 3)
-	
-	#right, left = np.array_split(ranges,2)	
+
+        # right, left = np.array_split(ranges,2)
 
         # choose representatives for each section
         right = nth_smallest(mid(right), 60)
         front = nth_smallest(mid(front), 60)
-        left  = nth_smallest(mid(left), 60)
+        left = nth_smallest(mid(left), 60)
 
-	d_dist = self.prev_dist - right
+        d_dist = self.prev_dist - right
 
         if self.noisy:
             rospy.loginfo('L: {}, F: {}, R: {}'.format(left, front, right))
@@ -143,67 +144,70 @@ class WallHugger:
         new_speed = Twist()
         # angular.z positive is anti-clockwise
 
-        #TODO: instead of using constants for speed and rotation speed, could
+        # TODO: instead of using constants for speed and rotation speed, could
         #      use something like a PID or PD controller to aim for a set-point
         #      distance from the wall in a more smooth manner to avoid jerky
         #      motion and overshooting. Could speed up when the wall is flat but
         #      slow down to navigate tricky obstacles.
-	action = "None"
+        action = "None"
 
-	a = laser_msg.ranges[190]
-	b = laser_msg.ranges[250]
+        a = laser_msg.ranges[190]
+        b = laser_msg.ranges[250]
 
-	ma = -1
-	dir = None
+        ma = -1
+        dir = None
 
         if not self.is_obstructed(front, laser_msg.ranges):
             # not obstructed: move forwards and try to stay a fixed distance to
             # the wall on the right.
             new_speed.linear.x = self.speed
 
-	    if right < self.min_wall_distance:
-		ma=0
+            if right < self.min_wall_distance:
+                ma = 0
             elif right > self.max_wall_distance:
-		ma = 2
-	    else:
-        	ma = 1
+                ma = 2
+            else:
+                ma = 1
 
-	    # > 0 = left
-	    # < 0 = right
-	    dir = (a-b) * -1
+            # > 0 = left
+            # < 0 = right
+            dir = (a - b) * -1
 
-	    if ma == 0:
-		if dir < -self.angle_thresh:
-                    new_speed.angular.z = self.rotate_speed # ac
-	            action="Left"
-		else:
-                    new_speed.angular.z = self.rotate_speed_slow # ac
-	            action="Slow Left"
+            if ma == 0:
+                if dir < -self.angle_thresh:
+                    new_speed.angular.z = self.rotate_speed  # ac
+                    action = "Left"
+                else:
+                    new_speed.angular.z = self.rotate_speed_slow  # ac
+                    action = "Slow Left"
             elif ma == 2:
-		if dir > self.angle_thresh:
-                    new_speed.angular.z = -self.rotate_speed # c
-	            action="Right"
-		else:
-                    new_speed.angular.z = -self.rotate_speed_slow # c
-	            action="Slow Right"
-	    else:
-		if dir < -self.angle_thresh:
-                    new_speed.angular.z = self.rotate_speed_slow # ac
-	            action="Slow Left"
-		else:
-                    new_speed.angular.z = -self.rotate_speed_slow # c
-	            action="Slow Right"
+                if dir > self.angle_thresh:
+                    new_speed.angular.z = -self.rotate_speed  # c
+                    action = "Right"
+                else:
+                    new_speed.angular.z = -self.rotate_speed_slow  # c
+                    action = "Slow Right"
+            else:
+                if dir < -self.angle_thresh:
+                    new_speed.angular.z = self.rotate_speed_slow  # ac
+                    action = "Slow Left"
+                else:
+                    new_speed.angular.z = -self.rotate_speed_slow  # c
+                    action = "Slow Right"
         else:
             # obstructed. Don't move forwards until no longer obstructed and in
             # the meantime rotate anti-clockwise.
-            new_speed.angular.z = self.rotate_speed # anti-clockwise
-	    action="Recover"
+            new_speed.angular.z = self.rotate_speed  # anti-clockwise
+            action = "Recover"
 
         if self.noisy:
-            rospy.loginfo('lin: {}, ang: {}, act: {}, ma: {}, dir: {}'.format(new_speed.linear.x, new_speed.angular.z, action, ma, dir))
+            rospy.loginfo(
+                'lin: {}, ang: {}, act: {}, ma: {}, dir: {}'.format(new_speed.linear.x, new_speed.angular.z, action, ma,
+                                                                    dir))
 
         # send the movement command to the robot
         self.move_pub.publish(new_speed)
+
 
 if __name__ == '__main__':
     # register this process as a ROS node
