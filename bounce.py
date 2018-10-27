@@ -181,7 +181,7 @@ if __name__ == '__main__':
     # register this process as a ROS node
     rospy.init_node(name='wall_hugger')
     # this is a useful trick if you keep forgetting to release the brakes for the wheels.
-    input('turn on the motors, then press enter to start')
+    raw_input('turn on the motors, then press enter to start')
     wh = WallHugger(noisy=True)
     # process messages until rospy.is_shutdown()
     rospy.spin()
