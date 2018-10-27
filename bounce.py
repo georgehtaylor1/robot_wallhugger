@@ -95,7 +95,7 @@ class WallHugger:
         self.side_range = 0.3
         self.front_range = 0.8
 
-    def is_obstructed(self, front, left, right, ranges):
+    def is_obstructed(self, right, right_f, left_f, left, ranges):
         """ whether the robot is able to safely move forwards.
         i.e. If there is space in front and there is no obstacle too close anywhere.
 
@@ -108,7 +108,7 @@ class WallHugger:
         Returns:
             whether the robot is 'obstructed'
         """
-        return front < self.front_range, left < self.side_range, right < self.side_range
+        return right < self.side_range, right_f < self.front_range, left_f < self.front_range, left < self.side_range
 
     def laser_callback(self, laser_msg):
         """ callback for receiving laser sensor messages
@@ -129,13 +129,14 @@ class WallHugger:
         mid = lambda x: x  # x[len(x)/3:len(x)*2/3]
 
         # split the readings spanning 180 degrees into 3 sections
-        right, front, left = np.array_split(ranges, 3)
+        right, right_f, left_f, left = np.array_split(ranges, 4)
 
         # right, left = np.array_split(ranges,2)
 
         # choose representatives for each section
         right = nth_smallest(mid(right), 60)
-        front = nth_smallest(mid(front), 60)
+        left_f = nth_smallest(mid(left_f), 60)
+        right_f= nth_smallest(mid(right_f), 60)
         left = nth_smallest(mid(left), 60)
 
         d_dist = self.prev_dist - right
@@ -162,11 +163,11 @@ class WallHugger:
         # > 0 = left
         # < 0 = right
         dir = (a - b) * -1
-        f, l, r = self.is_obstructed(front, left, right, ranges)
-        if f or r:
+        r, rf, lf, l = self.is_obstructed(right, right_f, left_f, left)
+        if rf or r:
             new_speed.angular.z = self.rotate_speed  # ac
             action = "Left"
-        elif l:
+        elif lf or l:
             new_speed.angular.z = -self.rotate_speed  # ac
             action = "Right"
         else:
