@@ -77,7 +77,7 @@ class WallHugger:
         # TODO: these values are just chosen to work reasonably well in the
         #      simulator, different parameters are probably required when
         #      running on the real robot.
-        self.speed = 0.3
+        self.speed = 0.5
         # TODO: setting this too high causes the robot to spin in a tight circle
         #      without ever 'attaching' to a wall if placed in a large enough
         #      open space. Setting too low makes the turning circle very large
@@ -106,7 +106,7 @@ class WallHugger:
         Returns:
             whether the robot is 'obstructed'
         """
-        return front < 0.6 or left < 0.3 or right < 0.3
+        return front < 0.8, left < 0.6, right < 0.6
 
     def laser_callback(self, laser_msg):
         """ callback for receiving laser sensor messages
@@ -160,13 +160,17 @@ class WallHugger:
         # > 0 = left
         # < 0 = right
         dir = (a - b) * -1
-
-        if self.is_obstructed(front, left, right, ranges):
+        f, l, r = self.is_obstructed(front, left, right, ranges)
+        if f or r:
             new_speed.angular.z = self.rotate_speed  # ac
             action = "Left"
+        elif l:
+            new_speed.angular.z = -self.rotate_speed  # ac
+            action = "Right"
         else:
             new_speed.linear.x = self.speed
             action = "Forward"
+
 
         if self.noisy:
             rospy.loginfo(
@@ -175,7 +179,6 @@ class WallHugger:
 
         # send the movement command to the robot
         self.move_pub.publish(new_speed)
-
 
 if __name__ == '__main__':
     # register this process as a ROS node
