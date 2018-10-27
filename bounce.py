@@ -142,7 +142,7 @@ class WallHugger:
         d_dist = self.prev_dist - right
 
         if self.noisy:
-            rospy.loginfo('L: {}, F: {}, R: {}'.format(left, front, right))
+            rospy.loginfo('L: {}, LF: {}, RF: {}, R: {}'.format(left, left_f, right_f, right))
 
         new_speed = Twist()
         # angular.z positive is anti-clockwise
