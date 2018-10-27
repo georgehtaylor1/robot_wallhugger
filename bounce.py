@@ -93,7 +93,7 @@ class WallHugger:
         self.max_wall_distance = desired_wall_distance + threshold
         self.angle_thresh = 1
 
-    def is_obstructed(self, front, ranges):
+    def is_obstructed(self, front, left, right, ranges):
         """ whether the robot is able to safely move forwards.
         i.e. If there is space in front and there is no obstacle too close anywhere.
 
@@ -106,7 +106,7 @@ class WallHugger:
         Returns:
             whether the robot is 'obstructed'
         """
-        return front < 0.6
+        return front < 0.6 or left < 0.3 or right < 0.3
 
     def laser_callback(self, laser_msg):
         """ callback for receiving laser sensor messages
@@ -161,7 +161,7 @@ class WallHugger:
         # < 0 = right
         dir = (a - b) * -1
 
-        if self.is_obstructed(front, ranges):
+        if self.is_obstructed(front, left, right, ranges):
             new_speed.angular.z = self.rotate_speed  # ac
             action = "Left"
         else:
